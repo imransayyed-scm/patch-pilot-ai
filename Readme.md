@@ -62,6 +62,13 @@ sam deploy --guided
 This will deploy the entire backend stack. Copy the `ApiUrl` from the output.
 
 **2. Frontend Deployment:**
+# In a separate terminal, outside your backend folder
+npm create vite@latest patch-pilot-frontend -- --template react
+cd patch-pilot-frontend
+npm install
+npm install @mui/material @emotion/react @emotion/styled
+aws s3 sync ./dist/ s3://patch-pilot-ai-frontend-hackthon-2025
+
 ```bash
 # Navigate to the frontend directory
 cd patch-pilot-frontend
