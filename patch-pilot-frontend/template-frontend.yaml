@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: patch-pilot-frontend infrastructure
+
+Resources:
+  WebAppS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  CloudFrontOAI:
+    Type: AWS::CloudFront::OriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: OAI for Patch Pilot Frontend
+
+  WebAppS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebAppS3Bucket
+      PolicyDocument:
+        Statement:
+          - Action: s3:GetObject
+            Effect: Allow
+            Resource: !Sub "arn:aws:s3:::${WebAppS3Bucket}/*"
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOAI.S3CanonicalUserId
+
+  WebAppCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: CloudFront Distribution for Patch Pilot Frontend
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - Id: WebAppS3Origin
+            DomainName: !GetAtt WebAppS3Bucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Join ['', ['origin-access-identity/cloudfront/', !Ref CloudFrontOAI]]
+        DefaultCacheBehavior:
+          TargetOriginId: WebAppS3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          Compress: true
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+Outputs:
+  S3BucketName:
+    Description: "Name of the S3 bucket for the web app"
+    Value: !Ref WebAppS3Bucket
+  CloudFrontDistributionURL:
+    Description: "URL of the CloudFront distribution"
+    Value: !Sub "https://${WebAppCloudFrontDistribution.DomainName}"
+  CloudFrontDistributionId:
+    Description: "ID of the CloudFront distribution for invalidation"
+    Value: !Ref WebAppCloudFrontDistribution
