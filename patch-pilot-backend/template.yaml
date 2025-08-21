@@ -1,21 +1,33 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  patch-pilot-backend
+  The complete serverless backend for the Patch Pilot AI application.
+  This stack includes the API, Lambda functions, database, and an hourly scheduler.
 
+# ------------------------------------------------------------------------------
+# Globals: Defines settings common to all functions in this template.
+# ------------------------------------------------------------------------------
 Globals:
   Function:
-    Timeout: 60
-    MemorySize: 256
+    Timeout: 60       # Increased timeout to accommodate potentially slow AI API calls.
+    MemorySize: 256   # Standard memory size, sufficient for these tasks.
     Runtime: python3.11
 
+# ------------------------------------------------------------------------------
+# Parameters: Inputs required when deploying the stack.
+# ------------------------------------------------------------------------------
 Parameters:
   LlmApiKey:
     Type: String
-    Description: The API Key for the LLM (Gemini or OpenAI)
-    NoEcho: true
+    Description: The secret API Key for the LLM (e.g., Google Gemini).
+    NoEcho: true      # Hides the key value in the AWS console and logs for security.
 
+# ------------------------------------------------------------------------------
+# Resources: All the AWS resources that make up the application.
+# ------------------------------------------------------------------------------
 Resources:
+  # --- DynamoDB Table ---
+  # Stores the state of all vulnerability findings.
   FindingsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -25,17 +37,26 @@ Resources:
       KeySchema:
         - AttributeName: id
           KeyType: HASH
-      BillingMode: PAY_PER_REQUEST
+      BillingMode: PAY_PER_REQUEST # Best for unpredictable, serverless workloads.
 
+  # --- API Gateway ---
+  # Provides the public HTTP endpoints for the frontend to call.
   ApiGateway:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
-      Cors:
+      Cors: # Critical for allowing the frontend website to access the API.
         AllowMethods: "'GET,POST,OPTIONS'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        AllowOrigin: "'*'"
+        AllowOrigin: "'*'" # For production, lock this down to your CloudFront domain.
 
+  # ------------------------------------------------------------------------------
+  # Lambda Functions
+  # ------------------------------------------------------------------------------
+
+  # --- Function 1: Get Findings ---
+  # Fetches findings from AWS Inspector and stores them in DynamoDB.
+  # Triggered by the API and an hourly schedule.
   GetFindingsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -45,7 +66,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref FindingsTable
       Policies:
-        - AWSLambdaBasicExecutionRole
+        - AWSLambdaBasicExecutionRole # For CloudWatch logs.
         - DynamoDBCrudPolicy:
             TableName: !Ref FindingsTable
         - Statement:
@@ -54,13 +75,24 @@ Resources:
                 - inspector2:ListFindings
               Resource: '*'
       Events:
+        # Trigger 1: Allows the frontend to refresh the list on demand.
         ApiEvent:
           Type: Api
           Properties:
             Path: /findings
             Method: get
             RestApiId: !Ref ApiGateway
+        # Trigger 2: Runs the function automatically every hour to find new vulnerabilities.
+        ScheduleEvent:
+          Type: Schedule
+          Properties:
+            Name: PatchPilot-Hourly-Sync
+            Description: "Triggers the GetFindingsFunction every hour."
+            Schedule: rate(1 hour)
 
+  # --- Function 2: Analyze Finding ---
+  # Takes a finding ID, calls the LLM for analysis, and updates the database.
+  # Triggered by the API when a user clicks "Analyze".
   AnalyzeFindingFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -69,7 +101,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref FindingsTable
-          LLM_API_KEY: !Ref LlmApiKey
+          LLM_API_KEY: !Ref LlmApiKey # Securely injects the API key from parameters.
       Policies:
         - AWSLambdaBasicExecutionRole
         - DynamoDBCrudPolicy:
@@ -82,6 +114,9 @@ Resources:
             Method: post
             RestApiId: !Ref ApiGateway
 
+  # --- Function 3: Deploy Fix ---
+  # Takes a finding ID and executes the patch command via AWS Systems Manager.
+  # Triggered by the API when a user clicks "Deploy Fix".
   DeployFixFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -98,7 +133,7 @@ Resources:
           - Effect: Allow
             Action:
               - ssm:SendCommand
-            Resource: '*'
+            Resource: '*' # For production, scope this down to specific instance ARNs or tags.
       Events:
         ApiEvent:
           Type: Api
@@ -107,7 +142,10 @@ Resources:
             Method: post
             RestApiId: !Ref ApiGateway
 
+# ------------------------------------------------------------------------------
+# Outputs: Values returned after the stack is successfully deployed.
+# ------------------------------------------------------------------------------
 Outputs:
   ApiUrl:
-    Description: "API Gateway endpoint URL for Prod stage"
+    Description: "API Gateway endpoint URL for the application's production stage."
     Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
