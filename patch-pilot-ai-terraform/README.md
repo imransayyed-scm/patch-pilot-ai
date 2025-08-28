@@ -1,8 +1,7 @@
 # patch-pilot-ai - Terraform conversion (modules)
-
 # 1) Ensure your repo has the lambda folders:
-#    src/get_findings, src/analyze_finding, src/deploy_fix
-#    each containing app.py (handler: app.lambda_handler)
+src/get_findings, src/analyze_finding, src/deploy_fix
+each containing app.py (handler: app.lambda_handler)
 
 # 2) Set your AWS creds for the target account/region
 export AWS_PROFILE=your-profile
@@ -17,7 +16,6 @@ terraform apply -auto-approve -var="llm_api_key=YOUR_SECRET_KEY"
 terraform output api_base_url
 
 #Notes / tips:
-
 LLM key is stored as a Lambda env var (LLM_API_KEY). For production, consider AWS Secrets Manager and an IAM policy to read it at runtime instead.
 I set broad SSM permissions (ssm:SendCommand on *) to match the hackathon template; tighten to instance ARNs if you can.
 The runtime defaults to python3.9 to align with your earlier code. Bump to python3.11/3.12 when your packaging/env is ready.
