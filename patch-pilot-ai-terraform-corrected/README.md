@@ -12,12 +12,12 @@ Use the example root module to deploy a proof-of-concept. Tighten IAM policies b
 
 patch-pilot-ai/
 ├── terraform/
-│   ├── main.tf                 # Root module: orchestrates everything
-│   ├── variables.tf            # Root variables (project name, region, API key)
-│   ├── outputs.tf              # Root outputs (like the final API URL)
-│   ├── terraform.tfvars.example # Example for user to copy for their secrets
+│   ├── main.tf                   # Root orchestration
+│   ├── variables.tf              # Root variables (region, project, etc.)
+│   ├── outputs.tf                # Root outputs (API URL, table name, etc.)
+│   ├── terraform.tfvars.example  # Example vars
 │   │
-│   ├── backend_code/             # SOURCE CODE FOR YOUR LAMBDAS
+│   ├── backend_code/             # Lambda source code
 │   │   ├── get_findings/
 │   │   │   ├── app.py
 │   │   │   └── requirements.txt
@@ -28,23 +28,23 @@ patch-pilot-ai/
 │   │       ├── app.py
 │   │       └── requirements.txt
 │   │
-│   └── modules/                  # REUSABLE TERRAFORM MODULES
-│       ├── api_gateway/
+│   └── modules/
+│       ├── api_gateway/          # HTTP API Gateway module
 │       │   ├── main.tf
 │       │   ├── variables.tf
 │       │   └── outputs.tf
-│       ├── dynamodb_table/
+│       ├── dynamodb_table/       # DynamoDB module
 │       │   ├── main.tf
 │       │   ├── variables.tf
 │       │   └── outputs.tf
-│       ├── lambda_function/
+│       ├── lambda_function/      # Generic Lambda module
 │       │   ├── main.tf
 │       │   ├── variables.tf
 │       │   └── outputs.tf
-│       └── scheduler/
+│       └── scheduler/            # EventBridge scheduler
 │           ├── main.tf
 │           ├── variables.tf
 │           └── outputs.tf
 │
 └── patch-pilot-frontend/
-    └── ... (frontend code remains the same)
+    └── ... (frontend React code unchanged)
