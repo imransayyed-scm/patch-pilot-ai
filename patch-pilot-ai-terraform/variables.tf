@@ -1,76 +1,53 @@
 variable "aws_region" {
-  type    = string
-  default = "ap-south-1"
+  description = "AWS region"
+  type        = string
+  default     = "ap-south-1"
 }
 
-variable "tags" {
-  type = map(string)
-  default = {}
+variable "project_name" {
+  description = "Project/app name prefix"
+  type        = string
+  default     = "patch-pilot-backend"
 }
 
-variable "reports_bucket_name" {
-  type = string
-  default = "patch-pilot-reports-bucket"
-}
-
-variable "recipients_table_name" {
-  type = string
-  default = "patch-pilot-recipients"
-}
-
-variable "lambda_role_name" {
-  type = string
-  default = "patch_pilot_lambda_role"
-}
-
-variable "lambda_function_name" {
-  type = string
-  default = "patch_pilot_lambda"
-}
-
-variable "lambda_handler" {
-  type = string
-  default = "index.lambda_handler"
+variable "llm_api_key" {
+  description = "API key for the external LLM (Gemini/OpenAI)"
+  type        = string
+  sensitive   = true
 }
 
 variable "lambda_runtime" {
-  type = string
-  default = "python3.12"
+  description = "Lambda runtime"
+  type        = string
+  default     = "python3.9" # keep aligned with your current code; change to python3.11/3.12 when ready
 }
 
-variable "lambda_code_s3_bucket" {
-  type = string
-  default = ""
-  description = "S3 bucket containing lambda deployment zip. If empty, provide local deploy method."
+variable "lambda_timeout" {
+  description = "Lambda timeout (seconds)"
+  type        = number
+  default     = 30
 }
 
-variable "lambda_code_s3_key" {
-  type = string
-  default = ""
-  description = "S3 key for the lambda zip object."
+variable "lambda_memory" {
+  description = "Lambda memory (MB)"
+  type        = number
+  default     = 256
 }
 
-variable "lambda_environment" {
-  type = map(string)
-  default = {}
+variable "src_get_findings" {
+  description = "Path to the get_findings source folder"
+  type        = string
+  default     = "src/get_findings"
 }
 
-variable "ses_sender_email" {
-  type = string
-  default = "noreply@example.com"
+variable "src_analyze_finding" {
+  description = "Path to the analyze_finding source folder"
+  type        = string
+  default     = "src/analyze_finding"
 }
 
-variable "event_rule_name" {
-  type = string
-  default = "patch-pilot-schedule"
-}
-
-variable "schedule_expression" {
-  type = string
-  default = "cron(30 15 ? * MON-THU *)"
-}
-
-variable "event_input" {
-  type = map(any)
-  default = {}
+variable "src_deploy_fix" {
+  description = "Path to the deploy_fix source folder"
+  type        = string
+  default     = "src/deploy_fix"
 }
