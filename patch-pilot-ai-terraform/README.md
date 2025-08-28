@@ -1,18 +1,18 @@
-# patch-pilot-ai - Terraform conversion (modules)
-# 1) Ensure your repo has the lambda folders:
+patch-pilot-ai - Terraform conversion (modules)
+1) Ensure your repo has the lambda folders:
 src/get_findings, src/analyze_finding, src/deploy_fix
 each containing app.py (handler: app.lambda_handler)
 
-# 2) Set your AWS creds for the target account/region
+2) Set your AWS creds for the target account/region
 export AWS_PROFILE=your-profile
 export AWS_REGION=ap-south-1
 
-# 3) Initialize & apply
+3) Initialize & apply
 terraform init
 terraform plan -var="llm_api_key=YOUR_SECRET_KEY"
 terraform apply -auto-approve -var="llm_api_key=YOUR_SECRET_KEY"
 
-# 4) Get the API URL
+4) Get the API URL
 terraform output api_base_url
 
 #Notes / tips:
