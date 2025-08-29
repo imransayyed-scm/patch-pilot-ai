@@ -1,0 +1,3 @@
+# Copy this file to terraform.tfvars and fill in your secret key.
+# DO NOT commit terraform.tfvars to git.
+llm_api_key = "PASTE_YOUR_GEMINI_API_KEY_HERE"
