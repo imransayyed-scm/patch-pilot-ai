@@ -1,1 +1,0 @@
-print("Get Findings Lambda")
